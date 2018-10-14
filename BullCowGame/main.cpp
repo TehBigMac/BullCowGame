@@ -11,7 +11,7 @@ using int32 = int;
 
 void PrintIntro();
 void PlayGame();
-FText GetGuess();
+FText GetValidGuess();
 bool AskToPlayAgain();
 
 FBullCowGame BCGame;
@@ -26,11 +26,11 @@ int main()
 	return 0;
 }
 
+// Introduce the game
 void PrintIntro() {
-	// Introduce the game
-	constexpr int32 WORD_LENGTH = 9;
+	std::cout << std::endl;
 	std::cout << "Welcome to Bulls and Cows, a fun word game!\n";
-	std::cout << "Can you guess the " << WORD_LENGTH;
+	std::cout << "Can you guess the " << BCGame.GetHiddenWordLength();
 	std::cout << " letter isogram I'm thinking of?\n" << std::endl;
 }
 
@@ -39,25 +39,47 @@ void PlayGame()
 	BCGame.Reset();
 	int32 MaxTries = BCGame.GetMaxTries();
 	//TODO Change from FOR to While loop once player entries are being validated
-	for (int32 i = 0; i < MaxTries; i++)
+	while (! BCGame.IsGameWon() && BCGame.GetCurrentTry() <= MaxTries)
 	{
-		FText Guess = GetGuess();
-		// TODO Check Guess Validity
-		// Submit valid guess to game
-		// If valid, print number of bulls and cows
-		std::cout << "Your guess was: " << Guess << std::endl;
+		FText Guess = GetValidGuess();
+
+		FBullCowCount BullCowCount = BCGame.SubmitGuess(Guess);
+		// Print Out Bulls and Cows
+		std::cout << "Bulls = " << BullCowCount.Bulls;
+		std::cout << " | Cows = " << BullCowCount.Cows << std::endl;
 		std::cout << std::endl;
 	}
 
 	// TODO Summarise Game
 }
-
-FText GetGuess()
+// Loop until user provides a valid guess
+FText GetValidGuess()
 {
-	int32 CurrentTry = BCGame.GetCurrentTry();
-	std::cout << "Try " << CurrentTry << " - Enter your guess: ";
 	FText Guess = "";
-	getline(std::cin, Guess);
+	EGuessStatus Status = EGuessStatus::Invalid_Status;
+	do
+	{
+		int32 CurrentTry = BCGame.GetCurrentTry();
+		std::cout << "Try " << CurrentTry << " - Enter your guess: ";
+		getline(std::cin, Guess);
+
+		Status = BCGame.CheckGuessValidity(Guess);
+		switch (Status)
+		{
+		case EGuessStatus::Wrong_Length:
+			std::cout << "Please enter a " << BCGame.GetHiddenWordLength() << " letter word.\n";
+			break;
+		case EGuessStatus::Not_Isogram:
+			std::cout << "Please enter a word without repeating letters.\n";
+			break;
+		case EGuessStatus::Not_Lowercase:
+			std::cout << "Please enter all lowercase letters.\n";
+			break;
+		default:
+			break;
+		}
+		std::cout << std::endl;
+	} while (Status != EGuessStatus::OK);
 	return Guess;
 }
 
